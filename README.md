@@ -2,6 +2,10 @@
 
 This project proposes a lightweight U-Net architecture for **face super-resolution** from 16×16 to 128×128, enhanced through **YOLO-based attention maps**, **perceptual loss**, and **adversarial training**.
 
+Donwload the `.h5` file with the heatmaps from [HuggingFace](https://huggingface.co/datasets/RiccardoCarraro/heatmaps) with the following commands:
+- `!curl -L -o heatmaps.h5 https://huggingface.co/datasets/RiccardoCarraro/heatmaps/resolve/main/heatmaps.h5` (`.h5` file with full set of 50k heatmaps)
+- or `!curl -L -o heatmaps.h5 https://huggingface.co/datasets/RiccardoCarraro/heatmaps/resolve/main/heatmaps_10k.h5` (with just 10k heatmaps)
+
 ---
 
 ## ✨ Key Features
