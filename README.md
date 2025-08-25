@@ -1,49 +1,63 @@
 # 🧠 YOLO-Guided Face Super-Resolution
 
-This project proposes a lightweight U-Net architecture for **face super-resolution** from 16×16 to 128×128, enhanced through **YOLO-based attention maps** and **perceptual loss**.
+This repository presents a lightweight U-Net architecture for **face super-resolution**, reconstructing high-quality $128 \times 128$ images from extremely low-resolution inputs of size $16 \times 16$. The method leverages **YOLO-based attention heatmaps** and a composite **perceptual loss** to enhance reconstruction fidelity.
 
-Donwload the `.h5` file with the heatmaps from [HuggingFace](https://huggingface.co/datasets/RiccardoCarraro/heatmaps) with the following commands:
-- `!curl -L -o heatmaps.h5 https://huggingface.co/datasets/RiccardoCarraro/heatmaps/resolve/main/heatmaps.h5` (`.h5` file with full set of 50k heatmaps)
-- or `!curl -L -o heatmaps.h5 https://huggingface.co/datasets/RiccardoCarraro/heatmaps/resolve/main/heatmaps_10k.h5` (with just 10k heatmaps)
+This work builds upon the degradation model and training protocol introduced by Kim et al. $[arXiv:2103.07039](https://arxiv.org/abs/2103.07039)$.
 
----
+***
 
-## ✨ Key Features
+## 🚀 Key Features
 
-- **🔍 YOLO-Based Attention (No FAN Needed)**  
-  We generate heatmaps using [YOLO](https://github.com/WongKinYiu/yolov7) detections (eyes, nose, mouth), avoiding the need for a pre-trained Facial Alignment Network (FAN).  
-  - No extra pretraining required  
-  - Works out of the box on other domains by changing YOLO classes  
-  - Decouples attention generation from training pipeline
+- **YOLO-Based Attention Maps**
+Attention maps are generated via [YOLO](https://github.com/WongKinYiu/yolov7) detections of facial landmarks (eyes, nose, mouth), circumventing the need for a pretrained Facial Alignment Network (FAN).
+    - Eliminates dependency on external alignment networks
+    - Easily adaptable to other domains by customizing YOLO classes
+    - Decouples attention map generation from the training pipeline, simplifying implementation and reducing overhead
+- **Efficient Lightweight Architecture**
+The U-Net backbone employs depthwise-separable convolutions in place of standard convolutional layers, substantially reducing model parameters and accelerating training without sacrificing performance.
+- **Composite Multi-Loss Objective**
+Training utilizes a configurable combination of loss components:
+    - Pixel-wise Mean Squared Error (MSE) loss
+    - Perceptual loss based on pretrained VGG features
+    - YOLO-guided attention loss to focus model learning on key facial regions
+- **Training Visualization Tools**
+Performance is monitored through qualitative visual comparisons on a fixed validation image, showing model outputs side-by-side across epochs, facilitating interpretability and debugging.
 
-- **⚡ Lightweight Architecture**  
-  Our U-Net replaces standard convolutions with **depthwise-separable convolutions**, resulting in significantly fewer parameters and faster training.
+***
 
-- **🎯 Loss Composition**  
-  Configurable multi-loss setup:  
-  - `pixel` loss (MSE)  
-  - `perceptual` loss (VGG-based)  
-  - `attention` loss (YOLO-guided)
+## 📂 Dataset Description
 
-- **🖼️ Training Visualization**  
-  During training, the models are compared side-by-side on a fixed validation image across epochs.
+Experiments employ the **CelebA** dataset, downsampled to replicate the degradation model described in Kim et al.’s “FAN: Feature-Aware Normalization for Super-Resolution of Face Images” $[arXiv:2103.07039](https://arxiv.org/abs/2103.07039)$.
 
----
+- Ground truth images: $128 \times 128$ pixels
+- Inputs: $16 \times 16$ pixels (downsampled as Kim et al for direct comparison)
+- YOLO-generated facial heatmaps are precomputed and stored in an `.h5` file to accelerate training.
 
-## 🗂️ Dataset
+Download the precomputed heatmaps from [HuggingFace](https://huggingface.co/datasets/RiccardoCarraro/heatmaps) using:
 
-We use the **CelebA** dataset downsampled to match the blur level in *Kim et al., "FAN: Feature-Aware Normalization for Super-Resolution of Face Images"*.  
-Ground truth images are 128×128, and inputs are bicubically downscaled to 16×16. YOLO-derived heatmaps are precomputed and reused during training.
+```bash
+curl -L -o heatmaps.h5 https://huggingface.co/datasets/RiccardoCarraro/heatmaps/resolve/main/heatmaps_30k.h5
+```
 
----
+or a subset with 10,000 heatmaps:
 
-## 📊 Models Compared
+```bash
+curl -L -o heatmaps_10k.h5 https://huggingface.co/datasets/RiccardoCarraro/heatmaps/resolve/main/heatmaps_10k.h5
+```
 
-We train and compare the following:
 
-| Model Name            | Pixel | Perceptual | Attention |
-|-----------------------|:-----:|:----------:|:---------:|
-| MSE + Perceptual    | ✅    | ✅         | ❌        |
-| MSE + Perceptual + Attention           | ✅    | ✅         | ✅        |
+***
 
-Both models are trained from scratch using the same settings and evaluated on identical validation batches.
+## ⚖️ Models Compared
+
+The following variants are implemented and evaluated under identical training conditions:
+
+
+| Model Variant | Pixel Loss (MSE) | Perceptual Loss (VGG) | Attention Loss (YOLO-guided) |
+| :-- | :--: | :--: | :--: |
+| Baseline (MSE + Perceptual) | ✓ | ✓ | ✗ |
+| Heatmap-Guided (MSE + Perceptual + Heatmap Loss) | ✓ | ✓ | ✓ |
+| Multiscale Loss (MSE + Perceptual + Heatmap Loss) | ✓ | ✓ | ✓ |
+| Deep Supervision (MSE + Perceptual + Heatmap Loss) | ✓ | ✓ | ✓ |
+
+All models are trained from scratch and evaluated quantitatively and qualitatively to assess the impact of YOLO-guided attention supervision on reconstruction quality.
